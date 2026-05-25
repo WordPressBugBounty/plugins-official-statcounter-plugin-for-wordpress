@@ -3,8 +3,8 @@ Contributors: Aodhan Cullen
 Donate link: http://statcounter.com/
 Tags: web, statistics, stats, hit, counter, visitor, ip, tracker, analytics
 Requires at least: 2.0.2
-Tested up to: 6.8.1
-Stable tag: 2.1.0
+Tested up to: 7.0
+Stable tag: 2.1.2
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -69,6 +69,9 @@ To activate the StatCounter service for your WordPress site:
 2. Using the magnify tool, you can "zoom in" on individual visitors and get a detailed report on where they are from, their system settings, and most importantly, what link reffered them to your site and their navigation path through your site. 
 
 == Changelog ==
+
+= 2.1.2 =
+Security fix: properly escape the post author nickname in the front-end author tag script (CVE-2026-6275). Tested up to WordPress 7.0.
 
 = 2.0.9 =
 Updated security checks
@@ -150,6 +153,9 @@ Improved UI to give error message in dashboard when no project id has been set
 * Added ability to view StatCounter Stats from within the Wordpress Admin.
 
 == Upgrade Notice ==
+
+= 2.1.2 =
+Security release: fixes a stored XSS via the post author nickname (CVE-2026-6275). All users should update.
 
 = 2.0.7 =
 Added additional sanitation to prevent XSS attacks

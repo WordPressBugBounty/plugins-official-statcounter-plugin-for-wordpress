@@ -1,37 +1,48 @@
 <?php
 /*
- * Plugin Name: Official StatCounter Plugin
- * Version: 2.1.1
+ * Plugin Name: StatCounter Analytics
+ * Version: 2.1.2
  * Plugin URI: http://statcounter.com/
- * Description: Adds the StatCounter tracking code to your blog. <br>To get setup: 1) Activate this plugin  2) Enter your StatCounter Project ID and Security Code in the <a href="options-general.php?page=StatCounter-Wordpress-Plugin.php"><strong>options page</strong></a>.
+ * Description: Adds the StatCounter tracking code to your blog. To get setup: 1) Activate this plugin 2) Enter your StatCounter Project ID and Security Code in the <a href="options-general.php?page=statcounter-options"><strong>options page</strong></a>.
  * Author: Aodhan Cullen
  * Author URI: http://statcounter.com/
+ * License: GPLv2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  */
 
 // Defaults, etc.
-// the last 'false' should make these constants case sensitive
-define("key_sc_project", "sc_project", false);
-define("key_sc_position", "sc_position", false);
-// legacy problem with sc_security naming
-define("key_sc_security", "key_sc_security", false);
-define("sc_project_default", "" , false);
-define("sc_security_default", "" , false);
-define("sc_position_default", "footer", false);
+define("KEY_SC_PROJECT", "sc_project");
+define("KEY_SC_POSITION", "sc_position");
+define("KEY_SC_SECURITY", "key_sc_security");
+define("SC_PROJECT_DEFAULT", "" );
+define("SC_SECURITY_DEFAULT", "" );
+define("SC_POSITION_DEFAULT", "footer");
 
-// Create the default key and status
-add_option(key_sc_project, sc_project_default);
-add_option(key_sc_security, sc_security_default);
-add_option("sc_invisible", "0");
-
-// Create a option page for settings
-add_action('admin_menu' , 'add_statcounter_option_page' );
+// Initialize hooks
+add_action('init', 'statcounter_init_defaults');
+add_action('admin_menu' , 'statcounter_add_option_page' );
 add_action( 'admin_menu', 'statcounter_admin_menu' );
-add_action('wp_head', 'statcounter_addToTags');
+add_action('wp_enqueue_scripts', 'statcounter_enqueue_scripts');
+add_action('wp_head', 'statcounter_add_author_tag');
+// Add async attribute to the statcounter script
+add_filter('script_loader_tag', 'statcounter_add_async_attribute', 10, 2);
+
+function statcounter_init_defaults() {
+	// Create the default key and status if they don't exist
+	if ( get_option(KEY_SC_PROJECT) === false ) {
+		add_option(KEY_SC_PROJECT, SC_PROJECT_DEFAULT);
+	}
+	if ( get_option(KEY_SC_SECURITY) === false ) {
+		add_option(KEY_SC_SECURITY, SC_SECURITY_DEFAULT);
+	}
+	add_option("sc_invisible", "0");
+}
 
 function statcounter_admin_menu() {
-	$hook = add_submenu_page('index.php', __('StatCounter Stats'), __('StatCounter Stats'), 'publish_posts', 'statcounter', 'statcounter_reports_page');
+	$hook = add_submenu_page('index.php', __('StatCounter Stats', 'official-statcounter-plugin-for-wordpress'), __('StatCounter Stats', 'official-statcounter-plugin-for-wordpress'), 'publish_posts', 'statcounter-stats', 'statcounter_reports_page');
 	add_action("load-$hook", 'statcounter_reports_load');
-$hook = add_submenu_page('plugins.php', __('StatCounter Admin'), __('StatCounter Admin'), 'manage_options', 'statcounter_admin', 'statcounter_options_page');
+
+	$hook = add_submenu_page('plugins.php', __('StatCounter Admin', 'official-statcounter-plugin-for-wordpress'), __('StatCounter Admin', 'official-statcounter-plugin-for-wordpress'), 'manage_options', 'statcounter-options', 'statcounter_options_page');
 }
 
 function statcounter_reports_load() {
@@ -47,8 +58,8 @@ function statcounter_reports_head() {
 }
 
 function statcounter_reports_page() {
-	$sc_project = get_option(key_sc_project);
-	if($sc_project==0) {
+	$sc_project = get_option(KEY_SC_PROJECT);
+	if($sc_project == 0) {
 		$sc_link = '//statcounter.com/';
 	} else {
 		$sc_link = '//statcounter.com/p'.esc_html($sc_project).'/?source=wordpress';
@@ -57,15 +68,11 @@ function statcounter_reports_page() {
 	echo '<iframe id="statcounter_frame" src="'.esc_url($sc_link).'" width="100%" height="2000">
 <p>Your browser does not support iframes.</p>
 </iframe>';
-
 }
 
-
-
 // Hook in the options page function
-function add_statcounter_option_page() {
-	global $wpdb;
-	add_options_page('StatCounter Options', 'StatCounter', "manage_options", basename(__FILE__), 'statcounter_options_page');
+function statcounter_add_option_page() {
+	add_options_page('StatCounter Options', 'StatCounter', "manage_options", 'statcounter-options', 'statcounter_options_page');
 }
 
 function statcounter_options_page() {
@@ -73,47 +80,55 @@ function statcounter_options_page() {
 	if ( isset( $_POST['info_update'] ) && check_admin_referer( 'update_sc_project_nonce', 'sc_project_nonce' ) ) {
 
 		// Update the Project ID
-		$sc_project = sanitize_text_field(trim($_POST[key_sc_project]));
-		if (ctype_digit($sc_project) == 0) { 
-			echo "<script>alert('Project ID should be numbers only')</script>"; 
+		// FIX: Sanitize immediately upon access to satisfy linter
+		$sc_project = isset($_POST[KEY_SC_PROJECT]) ? sanitize_text_field(wp_unslash($_POST[KEY_SC_PROJECT])) : '';
+
+		if (!ctype_digit($sc_project)) {
+			echo "<div class='error'><p>Project ID should be numbers only</p></div>";
 		} else {
 			if ($sc_project == '') {
-				$sc_project = sc_project_default;
+				$sc_project = SC_PROJECT_DEFAULT;
 			}
 			if (strlen($sc_project) > 16) {
-				echo "<script>alert('Project ID is invalid')</script>";
+				echo "<div class='error'><p>Project ID is invalid</p></div>";
 			} else {
-				update_option(key_sc_project, $sc_project);
+				update_option(KEY_SC_PROJECT, $sc_project);
 			}
 		}
 
 		// Update the Security ID
-		$sc_security = sanitize_text_field(trim($_POST[key_sc_security]));
+		// FIX: Sanitize immediately upon access to satisfy linter
+		$sc_security = isset($_POST[KEY_SC_SECURITY]) ? sanitize_text_field(wp_unslash($_POST[KEY_SC_SECURITY])) : '';
+		// Additional cleanup specific to this field
 		$sc_security = str_replace('"', '', $sc_security);
-		$sc_security = stripslashes($sc_security);
-		if (ctype_alnum(trim($sc_security, '"')) == 0) {
-			echo "<script>alert('Security code should be numbers and letters only')</script>"; 
+
+		if ($sc_security !== '' && !ctype_alnum(trim($sc_security, '"'))) {
+			echo "<div class='error'><p>Security code should be numbers and letters only</p></div>";
 		} else {
 			if ($sc_security =='') {
-				$sc_security = sc_security_default;
+				$sc_security = SC_SECURITY_DEFAULT;
 			}
 			if (strlen($sc_security) > 16) {
-				echo "<script>alert('Security code is invalid')</script>"; 
+				echo "<div class='error'><p>Security code is invalid</p></div>";
 			} else {
-				update_option(key_sc_security, esc_textarea($sc_security));
+				update_option(KEY_SC_SECURITY, $sc_security);
 			}
 		}
 
 		// Update the position
-		$sc_position = sanitize_text_field($_POST[key_sc_position]);
+		// FIX: Sanitize immediately upon access
+		$sc_position = isset($_POST[KEY_SC_POSITION]) ? sanitize_text_field(wp_unslash($_POST[KEY_SC_POSITION])) : '';
+
 		if (($sc_position != 'header') && ($sc_position != 'footer')) {
-			$sc_position = sc_position_default;
+			$sc_position = SC_POSITION_DEFAULT;
 		}
 
-		update_option(key_sc_position, $sc_position);
+		update_option(KEY_SC_POSITION, $sc_position);
 
 		// Force invisibility
-		$sc_invisible = sanitize_text_field(isset($_POST['sc_invisible'])) ? sanitize_text_field($_POST['sc_invisible']) : '';
+		// FIX: Sanitize immediately upon access
+		$sc_invisible = isset($_POST['sc_invisible']) ? sanitize_text_field(wp_unslash($_POST['sc_invisible'])) : '';
+
 		if ($sc_invisible == 1) {
 			update_option('sc_invisible', "1");
 		} else {
@@ -127,10 +142,10 @@ function statcounter_options_page() {
 	// Output the options page
 	?>
 
-	<form method="post" action="options-general.php?page=StatCounter-Wordpress-Plugin.php">
+	<form method="post" action="options-general.php?page=statcounter-options">
 		<?php wp_nonce_field( 'update_sc_project_nonce', 'sc_project_nonce' ); ?>
 		<div class="wrap">
-			<?php if (get_option( key_sc_project ) == "0") { ?>
+			<?php if (get_option( KEY_SC_PROJECT ) == "0" || get_option( KEY_SC_PROJECT ) == "") { ?>
 				<div style="margin:10px auto; border:3px #f00 solid; background-color:#fdd; color:#000; padding:10px; text-align:center;">
 					StatCounter Plugin has been activated, but will not be enabled until you enter your <strong>Project ID</strong> and <strong>Security Code</strong>.
 				</div>
@@ -147,45 +162,45 @@ function statcounter_options_page() {
 					<table class="editform" cellspacing="2" cellpadding="5">
 						<tr>
 							<td>
-								<label for="<?php echo esc_html(key_sc_project); ?>">Project ID:</label>
+								<label for="<?php echo esc_attr(KEY_SC_PROJECT); ?>">Project ID:</label>
 							</td>
 							<td>
 								<?php
 								echo "<input type='text' size='11' ";
-								echo "name='".esc_html(key_sc_project)."' ";
-								echo "id='".esc_html(key_sc_project)."' ";
-								echo "value='".get_option(key_sc_project)."' />\n";
+								echo "name='".esc_attr(KEY_SC_PROJECT)."' ";
+								echo "id='".esc_attr(KEY_SC_PROJECT)."' ";
+								echo "value='".esc_attr(get_option(KEY_SC_PROJECT))."' />\n";
 								?>
 							</td>
 						</tr>
 						<tr>
 							<td>
-								<label for="<?php echo esc_html(key_sc_security); ?>">Security Code:</label>
+								<label for="<?php echo esc_attr(KEY_SC_SECURITY); ?>">Security Code:</label>
 							</td>
 							<td>
 								<?php
 								echo "<input type='text' size='9' ";
-								echo "name='".esc_html(key_sc_security)."' ";
-								echo "id='".esc_html(key_sc_security)."' ";
-								echo "value='".get_option(key_sc_security)."' />\n";
+								echo "name='".esc_attr(KEY_SC_SECURITY)."' ";
+								echo "id='".esc_attr(KEY_SC_SECURITY)."' ";
+								echo "value='".esc_attr(get_option(KEY_SC_SECURITY))."' />\n";
 								?>
 							</td>
 						</tr>
 						<tr>
 							<td>
-								<label for="<?php echo esc_html(key_sc_position); ?>">Counter Position:</label>
+								<label for="<?php echo esc_attr(KEY_SC_POSITION); ?>">Counter Position:</label>
 							</td>
 							<td>
 								<?php
-								echo "<select name='".esc_html(key_sc_position)."' id='".esc_html(key_sc_position)."'>\n";
+								echo "<select name='".esc_attr(KEY_SC_POSITION)."' id='".esc_attr(KEY_SC_POSITION)."'>\n";
 
 								echo "<option value='header'";
-								if(get_option(key_sc_position) == "header")
+								if(get_option(KEY_SC_POSITION) == "header")
 									echo " selected='selected'";
 								echo ">Header</option>\n";
 
 								echo "<option value='footer'";
-								if(get_option(key_sc_position) != "header")
+								if(get_option(KEY_SC_POSITION) != "header")
 									echo" selected='selected'";
 								echo ">Footer</option>\n";
 
@@ -203,7 +218,7 @@ function statcounter_options_page() {
 								if(get_option('sc_invisible')==1) {
 									$checked = "checked";
 								}
-								echo "<input type='checkbox' name='sc_invisible' id='sc_invisible' value='1' ".esc_html($checked).">\n";
+								echo "<input type='checkbox' name='sc_invisible' id='sc_invisible' value='1' ".esc_attr($checked).">\n";
 								?>
 							</td>
 						</tr>
@@ -215,66 +230,77 @@ function statcounter_options_page() {
 			</p>
 		</div>
 	</form>
-
-
-
 	<?php
 }
 
-$sc_position = get_option(key_sc_position);
-if ($sc_position=="header") {
-	add_action('wp_head', 'add_statcounter');
-} else {
-	add_action('wp_footer', 'add_statcounter');
-}
-
-
-
-// The guts of the StatCounter script
-function add_statcounter() {
-	global $user_level;
-	$sc_project = get_option(key_sc_project);
-	$sc_security = get_option(key_sc_security);
-	$sc_invisible = 0;
+// Function to handle script enqueueing properly
+function statcounter_enqueue_scripts() {
+	$sc_project = get_option(KEY_SC_PROJECT);
+	$sc_security = get_option(KEY_SC_SECURITY);
 	$sc_invisible = get_option('sc_invisible');
-	if (
-	( $sc_project > 0 )
-	) {
-		?>
-		<!-- Start of StatCounter Code -->
-		<script>
-			<!--
-			var sc_project=<?php echo esc_html($sc_project); ?>;
-			var sc_security="<?php echo esc_html($sc_security); ?>";
-			<?php
-			if($sc_invisible==1) {
-				echo "var sc_invisible=1;\n";
-			}
 
-			define('HTTPS', isset($_SERVER['HTTPS']) && filter_var($_SERVER['HTTPS'], FILTER_VALIDATE_BOOLEAN));
-			$protocol = defined('HTTPS') ? "https:" : "http:";
+	// Only load if project ID is valid
+	if ( $sc_project > 0 ) {
 
-			?>
-		</script>
-        <script type="text/javascript" src="https://www.statcounter.com/counter/counter.js" async></script>
-		<noscript><div class="statcounter"><a title="web analytics" href="<?php echo esc_html($protocol) ?>//statcounter.com/"><img class="statcounter" src="<?php echo esc_html($protocol) ?>//c.statcounter.com/<?php echo esc_html($sc_project) ?>/0/<?php echo esc_html($sc_security) ?>/<?php echo esc_html($sc_invisible) ?>/" alt="web analytics" /></a></div></noscript>
-		<!-- End of StatCounter Code -->
-		<?php
+		$position = get_option(KEY_SC_POSITION);
+		$in_footer = ($position !== 'header');
+
+		// Prepare the inline variables
+		$script_vars = "var sc_project=" . intval($sc_project) . ";\n";
+		$script_vars .= "var sc_security=\"" . esc_js($sc_security) . "\";\n";
+		if($sc_invisible == 1) {
+			$script_vars .= "var sc_invisible=1;\n";
+		}
+
+		// Register and enqueue the StatCounter script
+		wp_register_script( 'statcounter-js', 'https://www.statcounter.com/counter/counter.js', array(), null, $in_footer );
+		wp_enqueue_script( 'statcounter-js' );
+
+		// Add the configuration variables before the script loads
+		wp_add_inline_script( 'statcounter-js', $script_vars, 'before' );
+
+		// Add the NOSCRIPT tag logic
+		$action_hook = $in_footer ? 'wp_footer' : 'wp_head';
+		add_action($action_hook, 'statcounter_output_noscript');
 	}
 }
 
-function statcounter_addToTags($pid){
+// Function to add async to the script tag
+function statcounter_add_async_attribute($tag, $handle) {
+	if ( 'statcounter-js' !== $handle ) {
+		return $tag;
+	}
+	return str_replace( ' src', ' async src', $tag );
+}
+
+// Separate function for NOSCRIPT output
+function statcounter_output_noscript() {
+	$sc_project = get_option(KEY_SC_PROJECT);
+	$sc_security = get_option(KEY_SC_SECURITY);
+	$sc_invisible = get_option('sc_invisible');
+
+	// FIX: Sanitize SERVER variable immediately upon access
+	$server_https = isset($_SERVER['HTTPS']) ? sanitize_text_field(wp_unslash($_SERVER['HTTPS'])) : '';
+	$is_https = $server_https && filter_var($server_https, FILTER_VALIDATE_BOOLEAN);
+	$protocol = $is_https ? "https:" : "http:";
+
+	?>
+	<noscript><div class="statcounter"><a title="web analytics" href="<?php echo esc_url($protocol) ?>//statcounter.com/"><img class="statcounter" src="<?php echo esc_url($protocol) ?>//c.statcounter.com/<?php echo esc_html($sc_project) ?>/0/<?php echo esc_html($sc_security) ?>/<?php echo esc_html($sc_invisible) ?>/" alt="web analytics" /></a></div></noscript>
+	<?php
+}
+
+function statcounter_add_author_tag(){
 	if (is_single()) {
 		global $post;
-		$queried_post = get_post($pid);
-		$authorId = $queried_post->post_author;
+		$authorId = $post->post_author;
+		// Escape author ID and nickname
+		$nickname = get_the_author_meta( 'nickname', $authorId );
 		?>
 		<script type="text/javascript">
 			var _statcounter = _statcounter || [];
-			_statcounter.push({"tags": {"author": "<?php the_author_meta( 'nickname', esc_html($authorId)); ?>"}});
+			_statcounter.push({"tags": {"author": "<?php echo esc_js($nickname); ?>"}});
 		</script>
 		<?php
-
 	}
 }
 ?>
