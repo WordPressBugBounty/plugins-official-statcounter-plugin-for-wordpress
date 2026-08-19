@@ -1,74 +1,93 @@
-=== StatCounter - Free Real Time Visitor Stats ===
-Contributors: Aodhan Cullen
-Donate link: http://statcounter.com/
-Tags: web, statistics, stats, hit, counter, visitor, ip, tracker, analytics
+=== StatCounter - Real Time Visitor Stats, Session Replay & Heatmaps ===
+Contributors: StatCounter
+Donate link: https://statcounter.com/
+Tags: analytics, session replay, heatmaps, stats, visitor tracking
 Requires at least: 2.0.2
 Tested up to: 7.0
-Stable tag: 2.1.2
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-StatCounter.com powered real-time detailed stats about the visitors to your blog.
+Real-time visitor stats, session replay and heatmaps for your WordPress site. See exactly how visitors use your site - and why they leave.
 
 == Description ==
 
-The Official StatCounter Wordpress Plugin brings you all the powerful StatCounter features to your wordpress blog.
+The Official StatCounter WordPress Plugin adds StatCounter to your site in a couple of clicks - no code editing required. StatCounter has provided reliable, real-time visitor analytics to millions of websites since 1999, and now includes session replay and heatmaps.
 
-Including but not limited to the following:
+= Session Replay =
 
-* [Invisible Counter Option](http://statcounter.com/features/#invisible-counter)
-* [Configurable Counter](http://statcounter.com/features/#configurable-counter)
-* [Configurable Summary Stats](http://statcounter.com/features/#configurable-summary-stats)
-* [Magnify User](http://statcounter.com/features/#magnify-user)
-* [Drill Down](http://statcounter.com/features/#drill-down)
-* [Popular Pages](http://statcounter.com/features/#popular-pages)
-* [Entry Pages](http://statcounter.com/features/#entry-pages)
-* [Exit Pages](http://statcounter.com/features/#exit-pages)
-* [Came From](http://statcounter.com/features/#came-from)
-* [Keyword Analysis](http://statcounter.com/features/#keyword-analysis)
-* [Recent Keyword Activity](http://statcounter.com/features/#recent-keyword-activity)
-* [Search Engine Wars](http://statcounter.com/features/#search-engine-wars)
-* [Visitor Paths](http://statcounter.com/features/#visitor-paths)
-* [Visit Length](http://statcounter.com/features/#visit-length)
-* [Returning Visits](http://statcounter.com/features/#returning-visits)
-* [Recent Pageload Activity](http://statcounter.com/features/#recent-pageload-activity)
-* [Recent Visitor Activity](http://statcounter.com/features/#recent-visitor-activity)
-* [Country/State/City Stats](http://statcounter.com/features/#country-state-city-stats)
-* [Recent Visitor Google Map](http://statcounter.com/features/#visitor-map)
-* [ISP Stats](http://statcounter.com/features/#isp-stats)
-* [Browser Stats](http://statcounter.com/features/#browser-stats)
-* [O.S. Stats](http://statcounter.com/features/#os-stats)
-* [Resolution Stats](http://statcounter.com/features/#resolution-stats)
-* [JavaScript Stats](http://statcounter.com/features/#javascript-stats)
-* [Email Reports](http://statcounter.com/features/#email-reports)
-* [Multiple Site Management](http://statcounter.com/features/#multiple-site-management)
-* [User Access Management](http://statcounter.com/features/#user-access-management)
-* [Public Stats](http://statcounter.com/features/#public-stats)
-* [Blocking Cookie](http://statcounter.com/features/#blocking-cookie)
+[Watch recordings of real visits to your site](https://statcounter.com/session-replay/) - a video-like playback of each visitor's clicks, scrolls and page navigation:
+
+* See exactly where visitors get stuck, confused or frustrated
+* Understand why visitors abandon carts, forms and signups
+* Watch how visitors from a specific campaign, country or referrer actually use your site
+* Improve support: replay a customer's session to see what went wrong
+
+= Heatmaps =
+
+[See at a glance where your visitors click](https://statcounter.com/heatmaps/) - and what they ignore:
+
+* Click heatmaps highlight the links, buttons and images getting the most attention
+* Interactive elements like dropdowns and mobile menus are tracked too
+* Spot "dead clicks" on elements that look clickable but aren't
+* Compare engagement across desktop and mobile
+
+= Real-Time Visitor Stats =
+
+All the classic StatCounter reports, updated in real time:
+
+* Popular pages, entry pages and exit pages
+* Incoming traffic: referring sites, keywords and campaigns
+* Visitor paths, visit length and returning visits
+* Country, state and city stats with a recent visitor map
+* Browser, OS, screen resolution and ISP stats
+* Magnify individual visitors for a detailed session report
+* Email reports, multiple site management and user access management
+* Invisible counter option
+
+[See all features](https://statcounter.com/features/)
+
+= Pricing =
+
+Core visitor stats are free forever on the Basic plan. Session replay and heatmaps are premium features, and every new account starts with a 30-day free trial - no credit card required. [View pricing](https://statcounter.com/pricing/)
 
 == Installation ==
 
-StatCounter is a free web traffic analysis service, which provides summary stats on all your traffic and a detailed analysis of your last 500 page views. This limit can be increased by subscribing to their paid service.
-
 To activate the StatCounter service for your WordPress site:
 
-* [Sign Up](http://statcounter.com/sign-up/) with StatCounter or [add a new project](http://statcounter.com/add-project/) to your existing account
+* [Sign up](https://statcounter.com/sign-up/) with StatCounter or [add a new project](https://statcounter.com/add-project/) to your existing account
 * The installation process will detect your WordPress installation and provide you with your Project ID and Security Code
-* The installation instructions are also available at [http://statcounter.com/wordpress.org/](http://statcounter.com/wordpress.org/)
-
+* Install and activate this plugin, then enter your Project ID and Security Code on the plugin's options page
+* The installation instructions are also available at [https://statcounter.com/wordpress.org/](https://statcounter.com/wordpress.org/)
 
 == Frequently Asked Questions ==
 
-= Do you have any questions? =
+= Do I need to edit my theme or add any code? =
 
-[Please contact us here with your query.](http://statcounter.com/about/contact/)
+No. Activate the plugin, enter your StatCounter Project ID and Security Code, and the tracking code is added to every page automatically.
+
+= Is StatCounter free? =
+
+Yes - the Basic plan is free forever and includes real-time visitor stats. Session replay and heatmaps are premium features, and every new account starts with a 30-day free trial (no credit card required).
+
+= Will the tracking code slow down my site? =
+
+No. The StatCounter code is lightweight and loads asynchronously, so it does not block your pages from rendering.
+
+= Do you have any other questions? =
+
+[Please contact us here with your query.](https://statcounter.com/about/contact/)
 
 == Screenshots ==
 
-1. Example StatCounter.com Summary Stats
-2. Using the magnify tool, you can "zoom in" on individual visitors and get a detailed report on where they are from, their system settings, and most importantly, what link reffered them to your site and their navigation path through your site. 
+1. Session Replay - watch a full recording of a visitor's session, with playback controls to skip inactivity, change speed and share the recording.
+2. Heatmaps - see exactly what visitors click and tap, broken down by page element, with separate desktop and mobile views.
+3. Visitor Activity - real-time stats on every visit, including location, referring URL, browser, system and screen resolution.
 
 == Changelog ==
+
+= 2.2.0 =
+Added a dismissible review reminder for site admins (shown once, snoozable, only after tracking has been active for a couple of weeks). Updated plugin listing: new description and screenshots covering Session Replay and Heatmaps.
 
 = 2.1.2 =
 Security fix: properly escape the post author nickname in the front-end author tag script (CVE-2026-6275). Tested up to WordPress 7.0.
@@ -183,4 +202,3 @@ Bug fix to prevent user entry of whitespace characters for Project ID and Securi
 
 = 1.6.2 =
 Upgrade to allow for fully functioning PayPal upgrade options.
-  

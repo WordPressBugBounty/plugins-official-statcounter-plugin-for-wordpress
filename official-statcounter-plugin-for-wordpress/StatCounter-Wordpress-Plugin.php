@@ -1,7 +1,7 @@
 <?php
 /*
  * Plugin Name: StatCounter Analytics
- * Version: 2.1.2
+ * Version: 2.2.0
  * Plugin URI: http://statcounter.com/
  * Description: Adds the StatCounter tracking code to your blog. To get setup: 1) Activate this plugin 2) Enter your StatCounter Project ID and Security Code in the <a href="options-general.php?page=statcounter-options"><strong>options page</strong></a>.
  * Author: Aodhan Cullen
@@ -17,6 +17,9 @@ define("KEY_SC_SECURITY", "key_sc_security");
 define("SC_PROJECT_DEFAULT", "" );
 define("SC_SECURITY_DEFAULT", "" );
 define("SC_POSITION_DEFAULT", "footer");
+define("KEY_SC_REVIEW_DISMISSED", "sc_review_dismissed");
+define("KEY_SC_REVIEW_TIME", "sc_review_prompt_time");
+define("SC_REVIEW_URL", "https://wordpress.org/support/plugin/official-statcounter-plugin-for-wordpress/reviews/#new-post");
 
 // Initialize hooks
 add_action('init', 'statcounter_init_defaults');
@@ -26,6 +29,9 @@ add_action('wp_enqueue_scripts', 'statcounter_enqueue_scripts');
 add_action('wp_head', 'statcounter_add_author_tag');
 // Add async attribute to the statcounter script
 add_filter('script_loader_tag', 'statcounter_add_async_attribute', 10, 2);
+// Review prompt (shown to admins on a few screens, once tracking has been active a while)
+add_action('admin_init', 'statcounter_review_handle_action');
+add_action('admin_notices', 'statcounter_review_notice');
 
 function statcounter_init_defaults() {
 	// Create the default key and status if they don't exist
@@ -228,6 +234,7 @@ function statcounter_options_page() {
 			<p class="submit">
 				<input type='submit' name='info_update' value='Update Options' />
 			</p>
+			<p style="color:#666;">Enjoying StatCounter? A <a href="<?php echo esc_url(SC_REVIEW_URL); ?>" target="_blank" rel="noopener">review on WordPress.org</a> helps others discover the plugin.</p>
 		</div>
 	</form>
 	<?php
@@ -286,6 +293,68 @@ function statcounter_output_noscript() {
 
 	?>
 	<noscript><div class="statcounter"><a title="web analytics" href="<?php echo esc_url($protocol) ?>//statcounter.com/"><img class="statcounter" src="<?php echo esc_url($protocol) ?>//c.statcounter.com/<?php echo esc_html($sc_project) ?>/0/<?php echo esc_html($sc_security) ?>/<?php echo esc_html($sc_invisible) ?>/" alt="web analytics" /></a></div></noscript>
+	<?php
+}
+
+// Handle the review prompt links (dismiss / snooze)
+function statcounter_review_handle_action() {
+	if ( ! isset($_GET['sc_review']) || ! current_user_can('manage_options') ) {
+		return;
+	}
+	$review_action = sanitize_text_field(wp_unslash($_GET['sc_review']));
+	check_admin_referer('sc_review_' . $review_action);
+
+	if ( $review_action == 'done' ) {
+		update_option(KEY_SC_REVIEW_DISMISSED, '1');
+	} elseif ( $review_action == 'later' ) {
+		update_option(KEY_SC_REVIEW_TIME, time() + 30 * DAY_IN_SECONDS);
+	}
+	wp_safe_redirect( remove_query_arg( array('sc_review', '_wpnonce') ) );
+	exit;
+}
+
+function statcounter_review_notice() {
+	if ( ! current_user_can('manage_options') ) {
+		return;
+	}
+	if ( get_option(KEY_SC_REVIEW_DISMISSED) ) {
+		return;
+	}
+	// Only ask users who actually have tracking configured
+	$sc_project = get_option(KEY_SC_PROJECT);
+	if ( $sc_project == '' || $sc_project == '0' ) {
+		return;
+	}
+	// Start a 14-day timer on first sight; only prompt once it expires
+	$show_time = get_option(KEY_SC_REVIEW_TIME);
+	if ( ! $show_time ) {
+		update_option(KEY_SC_REVIEW_TIME, time() + 14 * DAY_IN_SECONDS);
+		return;
+	}
+	if ( time() < $show_time ) {
+		return;
+	}
+	// Keep the notice off unrelated admin screens
+	if ( ! function_exists('get_current_screen') ) {
+		return;
+	}
+	$screen = get_current_screen();
+	$allowed_screens = array('dashboard', 'plugins', 'dashboard_page_statcounter-stats', 'settings_page_statcounter-options', 'plugins_page_statcounter-options');
+	if ( ! $screen || ! in_array($screen->id, $allowed_screens, true) ) {
+		return;
+	}
+
+	$done_url  = wp_nonce_url( add_query_arg('sc_review', 'done'), 'sc_review_done' );
+	$later_url = wp_nonce_url( add_query_arg('sc_review', 'later'), 'sc_review_later' );
+	?>
+	<div class="notice notice-info">
+		<p><strong>Enjoying StatCounter?</strong> You&#8217;ve been tracking your visitors for a while now &#8212; if the plugin has been useful, a review on WordPress.org would mean a lot and helps others find it.</p>
+		<p>
+			<a href="<?php echo esc_url(SC_REVIEW_URL); ?>" target="_blank" rel="noopener" class="button button-primary">&#9733; Rate StatCounter</a>&nbsp;
+			<a href="<?php echo esc_url($done_url); ?>" class="button">I&#8217;ve already left a review</a>&nbsp;
+			<a href="<?php echo esc_url($later_url); ?>">Maybe later</a>
+		</p>
+	</div>
 	<?php
 }
 
